@@ -21,7 +21,7 @@ Before doing any testing, please ensure the environment has been set up properly
 If already properly set up, activate the virtual environment with the following command:
 
 ```
-$ ./hf_env/bin/activate
+$ source ./hf_env/bin/activate
 ```
 
 Now the testing scripts located in [testing](/testing/) should work properly.
