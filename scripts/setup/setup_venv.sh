@@ -15,6 +15,6 @@ fi
 echo "##### Creating virtual environment #####"
 python -m venv $HF_ENV
 if [ $? -ne 0 ]; then
-	echo "Something went wrong with creating a virtual environment!"
+	echo "Something went wrong with creating the virtual environment! Aborting"
 	exit 1
 fi

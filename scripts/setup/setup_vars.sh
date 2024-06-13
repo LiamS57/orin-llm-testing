@@ -4,12 +4,19 @@
 # All setup scripts will source this just in case, to make 
 # sure things run smoothly.
 # 
+# If you want to change specific variables for the setup 
+# process, this is where you want to make edits!
+#
+# This script also prevents any script that sources it from
+# running with root privileges by design.
+# 
 # Liam Seymour 6/13/24
 
 MAIN_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && cd ../.. && pwd )
 SETUP_SH_DIR=$MAIN_DIR/scripts/setup
 
 HF_ENV=$MAIN_DIR/hf-env
+TMP_DIR=$MAIN_DIR/tmp
 TORCHFILE=torch-2.4.0a0+07cecf4168.nv24.05.14710581-cp310-cp310-linux_aarch64.whl
 CUDA_VER=122
 CUDA_BIN=/usr/local/cuda/bin

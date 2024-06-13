@@ -6,3 +6,6 @@ tests/access_token
 
 # Misc. testing script
 scripts/test.sh
+
+# Setup temporary files/directories
+tmp/
