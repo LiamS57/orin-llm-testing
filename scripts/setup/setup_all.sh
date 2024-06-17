@@ -25,3 +25,4 @@ source $SETUP_SH_DIR/setup_jtop.sh
 source $SETUP_SH_DIR/setup_post_clean.sh
 
 echo "##### Completed full setup process! #####"
+echo "It is recommended to close this terminal window and open another one for the change to .bashrc to take effect! Otherwise, testing scripts may not work properly."
