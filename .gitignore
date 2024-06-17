@@ -1,11 +1,10 @@
 # Python venv with packages
 hf-env/
 
-# HuggingFace access token
+# Testing ignores
 tests/access_token
-
-# Misc. testing script
-scripts/test.sh
+tests/__pycache__/
+tests/testing/
 
 # Setup temporary files/directories
 tmp/

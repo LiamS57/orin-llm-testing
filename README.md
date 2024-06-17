@@ -24,4 +24,4 @@ If already properly set up, activate the virtual environment with the following 
 $ source ./hf_env/bin/activate
 ```
 
-Now the testing scripts located in [testing](/testing/) should work properly.
+Now the testing scripts located in [tests](/tests/) should work properly.
