@@ -18,6 +18,7 @@ def get_time() -> float:
     return perf_counter()
 
 class LogEntry:
+    '''Simple "struct" for storing a value along with the time it is added to the log.'''
     time: float
     value: Any
 
@@ -32,6 +33,9 @@ class Log:
     '''Beginning time of the log (in seconds).'''
     time_log_end: float
     '''Ending time of the log (in seconds).'''
+    timestamps: list[LogEntry]
+    '''List of timestamp entries in the log.
+    Useful for storing information on events that take place during logging.'''
     memory_ram: dict[int, list[LogEntry]]
     '''Dictionary of lists of RAM measurements (in KB). 
     The dictionary is indexed by the PID of the pt_main_thread process(es) seen by jtop.
@@ -48,19 +52,25 @@ class Log:
     def __init__(self):
         self.time_log_start = -1
         self.time_log_end = -1
+        self.timestamps = list()
         self.memory_ram = dict()
         self.memory_gpu = dict()
         self.power = list()
+    
+    def _t(self) -> float:
+        return get_time() - self.time_log_start
 
     def _log(self, jetson: jtop):
+        '''internal logging callback function for jtop'''
         # get time since the log began
-        t = get_time() - self.time_log_start
+        t = self._t()
 
         # log power data
         self.power.append(LogEntry(t, (jetson.power['tot']['power'] / 1000)))
 
         # log process-specific data
         for proc in jetson.processes:
+            # pytorch process we want is always called 'pt_main_thread', GPU mem usage reflects model loading
             if proc[9] == "pt_main_thread":
                 pid = proc[0]
                 if not pid in self.memory_ram:
@@ -71,7 +81,9 @@ class Log:
                 # log RAM and GPU memory
                 self.memory_ram[pid].append(LogEntry(t, proc[7]))
                 self.memory_gpu[pid].append(LogEntry(t, proc[8]))
-
+    
+    def _log_timestamp(self, info):
+        self.timestamps.append(LogEntry(self._t(), info))
 
 
 
@@ -88,6 +100,7 @@ def begin_log(interval=0.5):
     _running_log._jtop.attach(_running_log._log)
     _running_log.time_log_start = get_time()
     _running_log._jtop.start()
+    _running_log._log_timestamp('Log started')
 
 def end_log() -> Log:
     '''Finish a running log and return the data. Raises a RuntimeError if begin_log() is not run first.'''
@@ -96,6 +109,7 @@ def end_log() -> Log:
         raise RuntimeError('Attempted to return a log when the log hasn\'t started logging!')
     
     _running_log._jtop.close()
+    _running_log._log_timestamp('Log finished')
     _running_log.time_log_end = get_time()
     del _running_log._jtop
 
@@ -109,3 +123,11 @@ def run_blocking(duration: float, interval=0.5) -> Log:
     begin_log(interval)
     sleep(duration)
     return end_log()
+
+def add_log_timestamp(info: str):
+    '''Adds a timestamp string to a running log. Raises a RuntimeError if begin_log() is not run first.'''
+    global _running_log
+    if _running_log == None:
+        raise RuntimeError('Attempted to add a log timestamp when the log hasn\'t started logging!')
+    
+    _running_log._log_timestamp(info)

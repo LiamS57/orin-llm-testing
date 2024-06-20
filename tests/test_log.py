@@ -21,3 +21,7 @@ for pid, mem_list in log.memory_gpu.items():
 print('Power Usage:')
 for entry in log.power:
     print(f'  ({entry.time:.4f} s): {entry.value} W')
+
+print('Timestamps:')
+for entry in log.timestamps:
+    print(f'  ({entry.time:.4f} s): {entry.value}')
