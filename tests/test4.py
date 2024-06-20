@@ -46,38 +46,34 @@ def run_generation_test(model_name: str, in_data, conn: Connection):
 
 
 print("Beginning tests of each model")
-#for m in models:
-#    proc = Process(target=run_generation_test, args=[m])
-#    proc.start()
-#    proc.join()
-#    sleep(3)
+for m in models:
+    print(f'\nRunning test on {m}')
+    test_log = Log()
+    test_log.begin()
+    sleep(5) # buffer time to see power before generation
 
+    # here we put all of the model loading and usage in a separate process
+    # this allows us to cleanly release all memory, both CPU and GPU
+    # additionally, a pipe is used to send back timestamped messages for the log
+    msg_recv, msg_send = Pipe()
+    proc = Process(target=run_generation_test, args=[m, input_data, msg_send])
+    proc.start()
+    while proc.is_alive():
+        if msg_recv.poll():
+            test_log.add_timestamp(str(msg_recv.recv()))
+    proc.join()
+    if not msg_send.closed:
+        msg_send.close()
+    msg_recv.close()
 
-print(f'\nRunning test on {models[0]}')
-test_log = Log()
-test_log.begin()
-sleep(5)
+    sleep(5) # buffer time to see power after generation
+    test_log.end()
+    print(f'Test on {m} complete')
 
-# here we put all of the model loading and usage in a separate process
-# this allows us to cleanly release all memory, both CPU and GPU
-msg_recv, msg_send = Pipe()
-proc = Process(target=run_generation_test, args=[models[0], input_data, msg_send])
-proc.start()
-while proc.is_alive():
-    if msg_recv.poll():
-        test_log.add_timestamp(str(msg_recv.recv()))
-proc.join()
-if not msg_send.closed:
-    msg_send.close()
-msg_recv.close()
-
-sleep(5)
-test_log.end()
-print(f'Test on {models[0]} complete')
-
-outfilename = '_'.join(['log', date_str, models[0].split('/')[-1] + '.json'])
-outfilepath = os.path.join(output_dir, outfilename)
-print(f'Saving log to {outfilepath}')
-json_str = test_log.to_json()
-with open(outfilepath, 'w') as fp:
-    fp.write(json_str)
+    # save the log to a file for analysis
+    outfilename = '_'.join(['log', date_str, m.split('/')[-1] + '.json'])
+    outfilepath = os.path.join(output_dir, outfilename)
+    print(f'Saving log to {outfilepath}')
+    json_str = test_log.to_json()
+    with open(outfilepath, 'w') as fp:
+        fp.write(json_str)
