@@ -1,9 +1,13 @@
 # Helper functions for logging statistics.
 # 
-# Although it is possible to set up multiple Log class instances, it is recommended to use
-# the begin_log() and end_log() functions instead. Multiple instances of jtop with different
-# intervals do not function at the proper intervals together, so it is better to only run
-# one at a time.
+# Although it is possible to set up multiple Log class instances, custom intervals will
+# not function properly. Multiple instances of jtop with different intervals do not 
+# function at the proper intervals together, and they will default to 1 s intervals.
+# 
+# Additional stats (either from jtop or another source) can be added in the Log._log_cb()
+# callback method. This method is called by jtop at the interval given in the Log.begin()
+# method, but any stats can be added to this function to ensure they are logged at said
+# interval.
 # 
 # jtop reference: https://rnext.it/jetson_stats/reference/jtop.html 
 # 
@@ -13,7 +17,6 @@ from json import dumps, loads, JSONDecoder, JSONEncoder
 from jtop import jtop
 from time import perf_counter, sleep
 from typing import Any
-from typing_extensions import Self
 
 def get_time() -> float:
     # wrapper for perf_counter, in case we need to use something else or add functionality later
@@ -62,7 +65,7 @@ class Log:
     def _t(self) -> float:
         return get_time() - self.time_log_start
 
-    def _log(self, jetson: jtop):
+    def _log_cb(self, jetson: jtop):
         '''internal logging callback function for jtop'''
         # get time since the log began
         t = self._t()
@@ -84,7 +87,10 @@ class Log:
                 self.memory_ram[pid].append(LogEntry(t, proc[7]))
                 self.memory_gpu[pid].append(LogEntry(t, proc[8]))
     
-    def _log_timestamp(self, info):
+    def add_timestamp(self, info: str):
+        '''Adds a timestamped message to the log.'''
+        if self.time_log_start == -1:
+            raise RuntimeError('Attempted to add a timestamp to a log before it was started!')
         self.timestamps.append(LogEntry(self._t(), info))
 
     class _LogJSONEncoder(JSONEncoder):
@@ -109,7 +115,7 @@ class Log:
         '''Converts Log object to json string.'''
         return dumps(self, cls=Log._LogJSONEncoder, indent=4)
 
-    def from_json(json_str: str) -> Self:
+    def from_json(json_str: str):
         '''Converts json string to Log object.'''
         newlog = Log()
         newlog.__dict__ = loads(json_str, cls=Log._LogJSONDecoder)
@@ -174,50 +180,36 @@ class Log:
                 print(f'  PID: {pid}')
                 for entry in mem_list:
                     print(f'    ({entry.time:.4f} s): {int(entry.value / 1000)} MB')
-
-
-
-_running_log: (Log | None) = None
-
-def begin_log(interval=0.5):
-    '''Begin a statistics log. Raises a RuntimeError if a log is already running.'''
-    global _running_log
-    if _running_log != None:
-        raise RuntimeError('Attempted to start a log measurement when already logging!')
     
-    _running_log = Log()
-    _running_log._jtop = jtop(interval=interval)
-    _running_log._jtop.attach(_running_log._log)
-    _running_log.time_log_start = get_time()
-    _running_log._log_timestamp('Log started')
-    _running_log._jtop.start()
+    def begin(self, interval: float = 0.5):
+        '''Begin logging statistics. Raises a RuntimeError if the log is not a new instance.'''
+        if self.time_log_start != -1:
+            raise RuntimeError('Attempted to start a log after it had already been started once!')
+        self._jtop = jtop(interval=interval)
+        self._jtop.attach(self._log_cb)
+        self.time_log_start = get_time()
+        self.add_timestamp('Log started')
+        self._jtop.start()
 
-def end_log() -> Log:
-    '''Finish a running log and return the data. Raises a RuntimeError if begin_log() is not run first.'''
-    global _running_log
-    if _running_log == None:
-        raise RuntimeError('Attempted to return a log when the log hasn\'t started logging!')
-    
-    _running_log._jtop.close()
-    _running_log._log_timestamp('Log finished')
-    _running_log.time_log_end = get_time()
-    del _running_log._jtop
+    def end(self):
+        '''Ends the log. Raises a RuntimeError if the log has not started or has already finished.'''
+        if self.time_log_start == -1:
+            raise RuntimeError('Attempted to end a log when it hasn\'t been started!')
+        if self.time_log_end != -1:
+            raise RuntimeError('Attempted to end a log after it had already ended!')
+        
+        self._jtop.close()
+        self.add_timestamp('Log finished')
+        self.time_log_end = get_time()
+        del self._jtop
 
-    ret = _running_log
-    _running_log = None
-    return ret
 
-def run_blocking(duration: float, interval=0.5) -> Log:
+
+def run_blocking(duration: float, interval: float = 0.5) -> Log:
     '''Log for a set duration, blocking the thread until completed.
     Useful for taking a baseline measurement when not running a test.'''
-    begin_log(interval)
+    log = Log()
+    log.begin(interval=interval)
     sleep(duration)
-    return end_log()
-
-def add_log_timestamp(info: str):
-    '''Adds a timestamp string to a running log. Raises a RuntimeError if begin_log() is not run first.'''
-    global _running_log
-    if _running_log == None:
-        raise RuntimeError('Attempted to add a log timestamp when the log hasn\'t started logging!')
-    
-    _running_log._log_timestamp(info)
+    log.end()
+    return log
