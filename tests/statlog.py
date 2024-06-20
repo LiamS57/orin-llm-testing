@@ -114,6 +114,66 @@ class Log:
         newlog = Log()
         newlog.__dict__ = loads(json_str, cls=Log._LogJSONDecoder)
         return newlog
+    
+    def print(self, in_order: bool = False):
+        '''Prints log data in the console.
+        Can either be printed with all entries grouped by content, or in order based on time.'''
+        total_t = self.time_log_end - self.time_log_start
+        print(f'Start time: {self.time_log_start:.4f} s (t=0)')
+        print(f'End time: {self.time_log_end:.4f} s (t={total_t:.4f})')
+        if in_order:
+            # Print all entries in order based on time added
+
+            entries: list[tuple[float, str]] = list()
+
+            # timestamps
+            for entry in self.timestamps:
+                val_str = '<--- ' + entry.value
+                entries.append((entry.time, val_str))
+
+            # power
+            for entry in self.power:
+                val_str = f'Power: {entry.value} W'
+                entries.append((entry.time, val_str))
+
+            # ram
+            for pid, mem_list in self.memory_ram.items():
+                for entry in mem_list:
+                    val_str = f'RAM (PID: {pid}): {int(entry.value / 1000)} MB'
+                    entries.append((entry.time, val_str))
+
+            # gpu memory
+            for pid, mem_list in self.memory_gpu.items():
+                for entry in mem_list:
+                    val_str = f'GPU MEM (PID: {pid}): {int(entry.value / 1000)} MB'
+                    entries.append((entry.time, val_str))
+            
+            # print entries in order
+            for entry in sorted(entries, key=lambda e : e[0]):
+                print(f'({entry[0]:.4f} s): {entry[1]}')
+            
+        else:
+            # Print all entries grouped by content
+
+            print('Timestamps:')
+            for entry in self.timestamps:
+                print(f'  ({entry.time:.4f} s): {entry.value}')
+
+            print('Power Usage:')
+            for entry in self.power:
+                print(f'  ({entry.time:.4f} s): {entry.value} W')
+
+            print('RAM Usage:')
+            for pid, mem_list in self.memory_ram.items():
+                print(f'  PID: {pid}')
+                for entry in mem_list:
+                    print(f'    ({entry.time:.4f} s): {int(entry.value / 1000)} MB')
+
+            print('GPU Mem Usage:')
+            for pid, mem_list in self.memory_gpu.items():
+                print(f'  PID: {pid}')
+                for entry in mem_list:
+                    print(f'    ({entry.time:.4f} s): {int(entry.value / 1000)} MB')
 
 
 
@@ -129,8 +189,8 @@ def begin_log(interval=0.5):
     _running_log._jtop = jtop(interval=interval)
     _running_log._jtop.attach(_running_log._log)
     _running_log.time_log_start = get_time()
-    _running_log._jtop.start()
     _running_log._log_timestamp('Log started')
+    _running_log._jtop.start()
 
 def end_log() -> Log:
     '''Finish a running log and return the data. Raises a RuntimeError if begin_log() is not run first.'''
