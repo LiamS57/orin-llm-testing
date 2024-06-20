@@ -9,9 +9,11 @@
 # 
 # Liam Seymour 6/18/24
 
+from json import dumps, loads, JSONDecoder, JSONEncoder
 from jtop import jtop
 from time import perf_counter, sleep
 from typing import Any
+from typing_extensions import Self
 
 def get_time() -> float:
     # wrapper for perf_counter, in case we need to use something else or add functionality later
@@ -84,6 +86,34 @@ class Log:
     
     def _log_timestamp(self, info):
         self.timestamps.append(LogEntry(self._t(), info))
+
+    class _LogJSONEncoder(JSONEncoder):
+        def default(self, o: Any) -> Any:
+            if isinstance(o, (Log, LogEntry)):
+                return o.__dict__
+            else:
+                return super().default(o)
+    
+    class _LogJSONDecoder(JSONDecoder):
+        def __init__(self, **kwargs):
+            kwargs.setdefault("object_hook", self.object_hook)
+            super().__init__(**kwargs)
+        
+        def object_hook(self, o):
+            if isinstance(o, dict):
+                if len(o.items()) == 2 and 'time' in o and 'value' in o:
+                    return LogEntry(o['time'], o['value'])
+            return o
+    
+    def to_json(self) -> str:
+        '''Converts Log object to json string.'''
+        return dumps(self, cls=Log._LogJSONEncoder, indent=4)
+
+    def from_json(json_str: str) -> Self:
+        '''Converts json string to Log object.'''
+        newlog = Log()
+        newlog.__dict__ = loads(json_str, cls=Log._LogJSONDecoder)
+        return newlog
 
 
 
