@@ -6,6 +6,10 @@
 # Liam Seymour 6/24/24
 
 
+# pre-argument-checking imports
+import os
+import sys
+
 # set up default variables
 models_filepath = 'models.txt'
 input_filepath = 'input.txt'
@@ -28,42 +32,42 @@ def print_usage_help():
     print("  run_tests.py --iterations=3 --suffix=fewer-iterations")
     print("  run_tests.py --no-erase --outputdir=./logs\n")
 
-# pre-argument-checking imports
-import os
-import sys
-
 # process command-line arguments
 for arg in sys.argv[1:]:
     # non-key-value args
     if arg == "--help":
         print_usage_help()
         exit(0)
-    if arg == "--no-erase":
+    elif arg == "--no-erase":
         opt_no_erase = True
-    
-    # key-value args
-    tmp = arg.split('=')
-    if len(tmp) != 2:
-        print(f'Badly formatted option: {arg}\n')
-        print_usage_help()
-        exit(1)
-    opt_var = tmp[0]
-    opt_data = tmp[1]
-    match opt_var:
-        case "--modelsfile":
-            models_filepath = os.path.abspath(opt_data)
-        case "--inputfile":
-            input_filepath = os.path.abspath(opt_data)
-        case "--iterations":
-            iterations = int(opt_data)
-        case "--outputdir":
-            output_dir = os.path.abspath(opt_data)
-        case "--suffix":
-            suffix = opt_data
-        case _:
-            print(f'Unknown option: {opt_var}\n')
+    else:
+        # key-value args
+        tmp = arg.split('=')
+        if len(tmp) != 2:
+            print(f'Badly formatted option: {arg}\n')
             print_usage_help()
             exit(1)
+        opt_var = tmp[0]
+        opt_data = tmp[1]
+        match opt_var:
+            case "--modelsfile":
+                models_filepath = os.path.abspath(opt_data)
+            case "--inputfile":
+                input_filepath = os.path.abspath(opt_data)
+            case "--iterations":
+                if int(opt_data) < 1:
+                    print(f'Too few iterations, cannot do negative or zero iterations!')
+                    exit(1)
+                iterations = int(opt_data)
+            case "--outputdir":
+                output_dir = os.path.abspath(opt_data)
+            case "--suffix":
+                suffix = opt_data
+            case _:
+                print(f'Unknown option: {opt_var}\n')
+                print_usage_help()
+                exit(1)
+
 
 # post-argument-checking imports (to prevent time delay)
 import hf_models
@@ -72,16 +76,18 @@ from statlog import Log
 from datetime import datetime
 from multiprocessing import Pipe, Process
 from multiprocessing.connection import Connection
+from pathlib import Path
 from time import sleep
 
-# set up datestring for appending to log name
+# set up datestring for subfolder
 date_str = datetime.now().strftime('%Y-%m-%d_%H%M%S')
 
 # load models from the list of names in the given file
 print("Loading model names...", end='')
 models = []
 with open(models_filepath, 'r') as model_file:
-    models = model_file.readlines()
+    for m in model_file.readlines():
+        models.append(m.rstrip('\n'))
 print(f'Got {len(models)} models')
 
 # load input data (text) from the given input file
@@ -90,6 +96,7 @@ input_data = ""
 with open(input_filepath, 'r') as input_file:
     input_data = '\n'.join(input_file.readlines())
 print(f'Got {len(input_data)} characters')
+
 
 # login to huggingface hub (for access to gated models)
 hf_models.login_by_token()
@@ -125,35 +132,43 @@ def _individual_test(model_name: str, in_data, conn: Connection):
     conn.close()
 
 
-# print("Beginning tests of each model")
-# for m in models:
-#     print(f'\nRunning test on {m}')
-#     test_log = Log()
-#     test_log.begin()
-#     sleep(5) # buffer time to see power before generation
+# run tests
+for m in models:
+    for i in range(iterations):
+        m_subname = m.split('/')[-1]
+        print(f'### Beginning test of {m_subname} ({i+1}/{iterations})')
 
-#     # here we put all of the model loading and usage in a separate process
-#     # this allows us to cleanly release all memory, both CPU and GPU
-#     # additionally, a pipe is used to send back timestamped messages for the log
-#     msg_recv, msg_send = Pipe()
-#     proc = Process(target=run_generation_test, args=[m, input_data, msg_send])
-#     proc.start()
-#     while proc.is_alive():
-#         if msg_recv.poll():
-#             test_log.add_timestamp(str(msg_recv.recv()))
-#     proc.join()
-#     if not msg_send.closed:
-#         msg_send.close()
-#     msg_recv.close()
+        test_log = Log()
+        test_log.begin()
+        sleep(5) # buffer time to see power before generation
 
-#     sleep(5) # buffer time to see power after generation
-#     test_log.end()
-#     print(f'Test on {m} complete')
+        # here we put all of the model loading and usage in a separate process
+        # this allows us to cleanly release all memory, both CPU and GPU
+        # additionally, a pipe is used to send back timestamped messages for the log
+        msg_recv, msg_send = Pipe()
+        proc = Process(target=_individual_test, args=[m, input_data, msg_send])
+        proc.start()
+        while proc.is_alive():
+            if msg_recv.poll():
+                test_log.add_timestamp(str(msg_recv.recv()))
+        proc.join()
+        if not msg_send.closed:
+            msg_send.close()
+        msg_recv.close()
 
-#     # save the log to a file for analysis
-#     outfilename = '_'.join(['log', date_str, m.split('/')[-1] + '.json'])
-#     outfilepath = os.path.join(output_dir, outfilename)
-#     print(f'Saving log to {outfilepath}')
-#     json_str = test_log.to_json()
-#     with open(outfilepath, 'w') as fp:
-#         fp.write(json_str)
+        sleep(5) # buffer time to see power after generation
+        test_log.end()
+        print(f'### Finished test of {m_subname} ({i+1}/{iterations})')
+
+        # save the log to a file for analysis
+        outfolder = os.path.join(os.path.abspath(output_dir), date_str)
+        Path(outfolder).mkdir(parents=True, exist_ok=True)
+        log_name_parts = ['log', m_subname, (i+1)]
+        if len(suffix) > 0:
+            log_name_parts.append(suffix)
+        outfilename = '_'.join(log_name_parts) + '.json'
+        outfilepath = os.path.join(outfolder, outfilename)
+        print(f'### Saving log to {outfilepath}')
+        json_str = test_log.to_json()
+        with open(outfilepath, 'w') as fp:
+            fp.write(json_str)
