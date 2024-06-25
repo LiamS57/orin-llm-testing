@@ -21,7 +21,7 @@ source $SETUP_SH_DIR/setup_venv.sh
 source $SETUP_SH_DIR/setup_pytorch.sh
 source $SETUP_SH_DIR/setup_transformers.sh
 source $SETUP_SH_DIR/setup_bitsandbytes.sh
-source $SETUP_SH_DIR/setup_jtop.sh
+source $SETUP_SH_DIR/setup_pip_extra.sh
 source $SETUP_SH_DIR/setup_post_clean.sh
 
 echo "##### Completed full setup process! #####"

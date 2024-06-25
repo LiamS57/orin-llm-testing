@@ -1,8 +1,9 @@
 #!/bin/bash
 
-# Setup script for installing the jetson-stats pip module.
-# This module contains JTop for utilizing stats in a Python
-# script.
+# Setup script for installing the additional required pip 
+# modules. This module contains JTop (jetson-stats) for 
+# utilizing stats in a Python script, and matplotlib + pandas
+# for building graphs and visualizing data post-testing.
 # 
 # Liam Seymour 6/13/24
 
@@ -19,10 +20,10 @@ fi
 source $HF_ENV/bin/activate
 
 # install jetson-stats (jtop)
-echo "##### Installing jetson-stats #####"
-pip install -U jetson-stats
+echo "##### Installing additional required pip packages #####"
+pip install -U jetson-stats matplotlib pandas
 if [ $? -ne 0 ]; then
-	echo "Pip install of jetson-stats failed! Aborting"
+	echo "Pip install of additional required packages failed! Aborting"
 	exit 1
 fi
 

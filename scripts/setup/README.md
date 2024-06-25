@@ -24,8 +24,8 @@ Performs the pip installation of all the official HuggingFace packages that work
 ### [setup_bitsandbytes.sh](./setup_bitsandbytes.sh)
 Compiles and installs the bitsandbytes quantization library from source. This is required for ```bitsandbytes``` to work with NVIDIA's provided PyTorch wheel file. In the event that the installed CUDA version is not 12.2, you will need to edit the version number variable in ```setup_vars.sh```.
 
-### [setup_jtop.sh](./setup_jtop.sh)
-Performs the pip installation of ```jetson-stats``` (JTop).
+### [setup_pip_extra.sh](./setup_pip_extra.sh)
+Performs the pip installation of ```jetson-stats``` (JTop), ```matplotlib```, and ```pandas```.
 
 ### [setup_post_clean.sh](./setup_post_clean.sh)
 Removes any remaining temporary files, in case they have been left by the installation process.
