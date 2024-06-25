@@ -126,7 +126,8 @@ def _individual_test(model_name: str, in_data, conn: Connection, do_quantize: bo
     # TEST BEGIN
 
     conn.send('MODEL_LOAD_START')
-    mdl, tk = None
+    mdl = None
+    tk = None
     if do_quantize:
         mdl, tk = hf_models.load_model_quantized(model_name)
     else:
@@ -172,7 +173,7 @@ for m in models:
         # save the log to a file for analysis
         outfolder = os.path.join(os.path.abspath(output_dir), date_str)
         Path(outfolder).mkdir(parents=True, exist_ok=True)
-        log_name_parts = ['log', m_subname, (i+1)]
+        log_name_parts = ['log', m_subname, str(i+1)]
         if opt_no_quant:
             log_name_parts.append('no-quant')
         if len(suffix) > 0:

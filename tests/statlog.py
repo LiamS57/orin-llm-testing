@@ -53,7 +53,7 @@ class Log:
     Lists in the dictionary store measurements along with the time they are recorded since the log began (in seconds).'''
     power: list[LogEntry]
     '''List of power measurements (in watts), along with the time they are recorded since the log began (in seconds).'''
-    accuracy: Any # TODO: Add accuracy measurement
+    accuracy: float # TODO: Add accuracy measurement
     '''Accuracy of the test (WIP)'''
 
     _jtop: jtop
@@ -62,9 +62,11 @@ class Log:
         self.time_log_start = -1
         self.time_log_end = -1
         self.timestamps = list()
+        self.freq_gpu = list()
         self.memory_ram = dict()
         self.memory_gpu = dict()
         self.power = list()
+        self.accuracy = -1
     
     def _t(self) -> float:
         return get_time() - self.time_log_start
@@ -100,10 +102,10 @@ class Log:
             raise RuntimeError('Attempted to add a timestamp to a log before it was started!')
         self.timestamps.append(LogEntry(self._t(), info))
     
-    def log_accuracy(self, acc):
+    def log_accuracy(self, acc: float):
         '''Stores the determined accuracy of the model during the test. (WIP)'''
         self.accuracy = acc
-        # TODO: Add accuracy logging functionality
+        # TODO: Add any additional accuracy logging functionality
         
 
     class _LogJSONEncoder(JSONEncoder):
@@ -167,6 +169,11 @@ class Log:
                     val_str = f'GPU MEM (PID: {pid}): {int(entry.value / 1000)} MB'
                     entries.append((entry.time, val_str))
             
+            # gpu frequency
+            for entry in self.freq_gpu:
+                val_str = f'GPU Freq: {entry.value} MHz'
+                entries.append((entry.time, val_str))
+
             # print entries in order
             for entry in sorted(entries, key=lambda e : e[0]):
                 print(f'({entry[0]:.4f} s): {entry[1]}')
@@ -193,6 +200,11 @@ class Log:
                 print(f'  PID: {pid}')
                 for entry in mem_list:
                     print(f'    ({entry.time:.4f} s): {int(entry.value / 1000)} MB')
+            
+            print('GPU Frequency:')
+            for entry in self.freq_gpu:
+                print(f'  ({entry.time:.4f} s): {entry.value} MHz')
+
     
     def begin(self, interval: float = 0.5):
         '''Begin logging statistics. Raises a RuntimeError if the log is not a new instance.'''
