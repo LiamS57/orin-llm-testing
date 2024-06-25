@@ -41,6 +41,8 @@ class Log:
     timestamps: list[LogEntry]
     '''List of timestamp entries in the log.
     Useful for storing information on events that take place during logging.'''
+    freq_gpu: list[LogEntry]
+    '''List of GPU frequency measurements (in MHz)'''
     memory_ram: dict[int, list[LogEntry]]
     '''Dictionary of lists of RAM measurements (in KB). 
     The dictionary is indexed by the PID of the pt_main_thread process(es) seen by jtop.
@@ -51,6 +53,8 @@ class Log:
     Lists in the dictionary store measurements along with the time they are recorded since the log began (in seconds).'''
     power: list[LogEntry]
     '''List of power measurements (in watts), along with the time they are recorded since the log began (in seconds).'''
+    accuracy: Any # TODO: Add accuracy measurement
+    '''Accuracy of the test (WIP)'''
 
     _jtop: jtop
 
@@ -73,6 +77,9 @@ class Log:
         # log power data
         self.power.append(LogEntry(t, (jetson.power['tot']['power'] / 1000)))
 
+        # log gpu frequency data
+        self.freq_gpu.append(LogEntry(t, (jetson.gpu['gpu']['freq']['cur'] / 1000)))
+
         # log process-specific data
         for proc in jetson.processes:
             # pytorch process we want is always called 'pt_main_thread', GPU mem usage reflects model loading
@@ -92,6 +99,12 @@ class Log:
         if self.time_log_start == -1:
             raise RuntimeError('Attempted to add a timestamp to a log before it was started!')
         self.timestamps.append(LogEntry(self._t(), info))
+    
+    def log_accuracy(self, acc):
+        '''Stores the determined accuracy of the model during the test. (WIP)'''
+        self.accuracy = acc
+        # TODO: Add accuracy logging functionality
+        
 
     class _LogJSONEncoder(JSONEncoder):
         def default(self, o: Any) -> Any:
