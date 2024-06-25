@@ -17,15 +17,17 @@ iterations = 5
 output_dir = 'out'
 suffix = ''
 opt_no_erase = False
+opt_no_quant = False
 
 # function for printing the usage text
 def print_usage_help():
-    print("Usage: run_tests.py [--OPTION]... [--OPTION=...]...\n")
+    print("Usage: run_tests.py [--OPTION[=...]]...\n")
     print("  --help             Shows this help")
     print("  --modelsfile=...   Uses the given file to look for LLM model names (Default: ./models.txt)")
     print("  --inputfile=...    Uses the given file as input for text generation (Default: ./input.txt)")
     print("  --iterations=...   Sets the number of iterationsto repeat individual tests (Default: 5)")
     print("  --no-erase         Prevents the script from erasing previously cached models")
+    print("  --no-quant         Forces the models to be loaded without quantization")
     print("  --outputdir=...    Outputs log files to the given directory (Default: ./out)")
     print("  --suffix=...       Adds the given suffix to the generated log files")
     print("\nExamples:")
@@ -35,38 +37,41 @@ def print_usage_help():
 # process command-line arguments
 for arg in sys.argv[1:]:
     # non-key-value args
-    if arg == "--help":
-        print_usage_help()
-        exit(0)
-    elif arg == "--no-erase":
-        opt_no_erase = True
-    else:
-        # key-value args
-        tmp = arg.split('=')
-        if len(tmp) != 2:
-            print(f'Badly formatted option: {arg}\n')
+    match arg:
+        case "--help":
             print_usage_help()
-            exit(1)
-        opt_var = tmp[0]
-        opt_data = tmp[1]
-        match opt_var:
-            case "--modelsfile":
-                models_filepath = os.path.abspath(opt_data)
-            case "--inputfile":
-                input_filepath = os.path.abspath(opt_data)
-            case "--iterations":
-                if int(opt_data) < 1:
-                    print(f'Too few iterations, cannot do negative or zero iterations!')
-                    exit(1)
-                iterations = int(opt_data)
-            case "--outputdir":
-                output_dir = os.path.abspath(opt_data)
-            case "--suffix":
-                suffix = opt_data
-            case _:
-                print(f'Unknown option: {opt_var}\n')
+            exit(0)
+        case "--no-erase":
+            opt_no_erase = True
+        case "--no-quant":
+            opt_no_quant = True
+        case _:
+            # key-value args
+            tmp = arg.split('=')
+            if len(tmp) != 2:
+                print(f'Unknown option: {arg}\n')
                 print_usage_help()
                 exit(1)
+            opt_var = tmp[0]
+            opt_data = tmp[1]
+            match opt_var:
+                case "--modelsfile":
+                    models_filepath = os.path.abspath(opt_data)
+                case "--inputfile":
+                    input_filepath = os.path.abspath(opt_data)
+                case "--iterations":
+                    if int(opt_data) < 1:
+                        print(f'Too few iterations, cannot do negative or zero iterations!')
+                        exit(1)
+                    iterations = int(opt_data)
+                case "--outputdir":
+                    output_dir = os.path.abspath(opt_data)
+                case "--suffix":
+                    suffix = opt_data
+                case _:
+                    print(f'Unknown option: {opt_var}\n')
+                    print_usage_help()
+                    exit(1)
 
 
 # post-argument-checking imports (to prevent time delay)
@@ -115,13 +120,17 @@ sleep(3)
 
 # The following function is used in a separate process to run the generation test.
 # Add/change any desired testing functionality in this function to ensure it is tested on each model!
-def _individual_test(model_name: str, in_data, conn: Connection):
+def _individual_test(model_name: str, in_data, conn: Connection, do_quantize: bool):
     '''Test method content, performed on a separate process.'''
     # Change any content within TEST BEGIN and TEST END to change the testing behavior!
     # TEST BEGIN
 
     conn.send('MODEL_LOAD_START')
-    mdl, tk = hf_models.load_model_quantized(model_name)
+    mdl, tk = None
+    if do_quantize:
+        mdl, tk = hf_models.load_model_quantized(model_name)
+    else:
+        mdl, tk = hf_models.load_model(model_name)
     conn.send('MODEL_LOAD_END')
 
     conn.send('GENERATE_START')
@@ -146,7 +155,7 @@ for m in models:
         # this allows us to cleanly release all memory, both CPU and GPU
         # additionally, a pipe is used to send back timestamped messages for the log
         msg_recv, msg_send = Pipe()
-        proc = Process(target=_individual_test, args=[m, input_data, msg_send])
+        proc = Process(target=_individual_test, args=[m, input_data, msg_send, not opt_no_quant])
         proc.start()
         while proc.is_alive():
             if msg_recv.poll():
@@ -164,6 +173,8 @@ for m in models:
         outfolder = os.path.join(os.path.abspath(output_dir), date_str)
         Path(outfolder).mkdir(parents=True, exist_ok=True)
         log_name_parts = ['log', m_subname, (i+1)]
+        if opt_no_quant:
+            log_name_parts.append('no-quant')
         if len(suffix) > 0:
             log_name_parts.append(suffix)
         outfilename = '_'.join(log_name_parts) + '.json'
