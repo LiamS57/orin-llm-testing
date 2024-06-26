@@ -24,7 +24,7 @@ jetson.start()
 t_start = perf_counter()
 
 mdl, tk = hf_models.load_model_quantized("EleutherAI/pythia-70m-deduped")
-output = hf_models.generate_from_input(mdl, tk, "This is a test of the system")
+output, _ = hf_models.generate_from_input(mdl, tk, "This is a test of the system")
 
 t_end = perf_counter()
 jetson.close()

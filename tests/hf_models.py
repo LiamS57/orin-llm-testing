@@ -86,10 +86,13 @@ def load_model_quantized(model_name: str):
     '''Load an LLM model from HF with quantization enabled.'''
     return load_model(model_name=model_name, bnb_conf=BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_compute_dtype=float16))
 
-def generate_from_input(model, tokenizer, input_text: str, max_new_tokens=64) -> str:
-    '''Generates text from a given input, model, and tokenizer.'''
+def generate_from_input(model, tokenizer, input_text: str, max_new_tokens=64) -> tuple[str, list]:
+    '''Generates text from a given input, model, and tokenizer.
+    Returns the generated text and a list of the generated tokens.'''
     model_inputs = tokenizer([input_text], return_tensors="pt").to("cuda")
     print("Generating tokens...")
     generated_ids = model.generate(**model_inputs, max_new_tokens=max_new_tokens, do_sample=True)
     print("Decoding tokens...")
-    return tokenizer.batch_decode(generated_ids, skip_special_tokens=True)[0]
+    decoded = tokenizer.batch_decode(generated_ids, skip_special_tokens=True)[0]
+    new_tokens = generated_ids[0][len(model_inputs['input_ids'][0]):]
+    return decoded, new_tokens

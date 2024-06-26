@@ -38,7 +38,7 @@ For more usage information, use the ```--help``` option.
 ```
 import hf_models
 mdl, tk = hf_models.load_model_quantized("EleutherAI/pythia-70m-deduped")
-output = hf_models.generate_from_input(mdl, tk, "Hello there! My name is")
+output, _ = hf_models.generate_from_input(mdl, tk, "Hello there! My name is")
 ```
 
 [```statlog.py```](./statlog.py) provides a timestamp-based logging system using JTop to log several stats of the Jetson. Once an instance of the log begins, it takes continuous readings of Jetson stats until stopped. Timestamps can be added at specific points during a test to signify when an event occurs. The log can be exported to/imported from JSON format files for storage/transfer off the Jetson device (i.e. before a reflash).

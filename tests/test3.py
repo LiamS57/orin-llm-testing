@@ -18,7 +18,7 @@ sleep(10)
 
 def run_generation_test(model_name: str):
     mdl, tk = hf_models.load_model_quantized(model_name)
-    output = hf_models.generate_from_input(mdl, tk, "We are testing the ability of the model to")
+    output, _ = hf_models.generate_from_input(mdl, tk, "We are testing the ability of the model to")
     print(output)
 
 for m in models:

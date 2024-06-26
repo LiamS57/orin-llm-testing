@@ -38,7 +38,7 @@ def run_generation_test(model_name: str, in_data, conn: Connection):
     conn.send('Model and tokenizer loading finished')
 
     conn.send('Output generation started')
-    output = hf_models.generate_from_input(mdl, tk, in_data)
+    output, _ = hf_models.generate_from_input(mdl, tk, in_data)
     conn.send('Output generation finished')
 
     # TEST END

@@ -141,7 +141,7 @@ def _individual_test(model_name: str, in_data, conn: Connection, do_quantize: bo
     sleep(5) # buffer time between loading and generation for power
 
     conn.send('GENERATE_START')
-    output = hf_models.generate_from_input(mdl, tk, in_data)
+    output, _ = hf_models.generate_from_input(mdl, tk, in_data)
     conn.send('GENERATE_END')
 
     # TEST END
