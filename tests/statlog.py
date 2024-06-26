@@ -57,6 +57,8 @@ class Log:
     Lists in the dictionary store measurements along with the time they are recorded since the log began (in seconds).'''
     power: list[LogEntry]
     '''List of power measurements (in watts), along with the time they are recorded since the log began (in seconds).'''
+    tokens_generated: int
+    '''Number of tokens generated during the test.'''
     accuracy: float # TODO: Add accuracy measurement
     '''Accuracy of the test (WIP)'''
 
@@ -71,6 +73,7 @@ class Log:
         self.memory_ram = dict()
         self.memory_gpu = dict()
         self.power = list()
+        self.tokens_generated = -1
         self.accuracy = -1
     
     def _t(self) -> float:
@@ -105,7 +108,7 @@ class Log:
         '''Adds a timestamped message to the log.'''
         if self.time_log_start == -1:
             raise RuntimeError('Attempted to add a timestamp to a log before it was started!')
-        if self.get_timestamp(info) == -1:
+        if self.get_timestamp(info) != -1:
             raise RuntimeError('Attempted to add a timestamp to a log when the timestamp name already exists!')
         self.timestamps.append(LogEntry(self._t(), info))
     
@@ -156,6 +159,7 @@ class Log:
         total_t = self.time_log_end - self.time_log_start
         print(f'Start time: {self.time_log_start:.4f} s (t=0)')
         print(f'End time: {self.time_log_end:.4f} s (t={total_t:.4f})')
+        print(f'Tokens generated: {self.tokens_generated}')
         if in_order:
             # Print all entries in order based on time added
 
@@ -229,7 +233,7 @@ class Log:
         self._jtop = jtop(interval=interval)
         self._jtop.attach(self._log_cb)
         self.time_log_start = get_time()
-        self.add_timestamp('Log started')
+        self.add_timestamp('LOG_START')
         self._jtop.start()
 
     def end(self):
@@ -242,7 +246,7 @@ class Log:
             raise ImportError('Cannot end log, jtop is not installed!')
         
         self._jtop.close()
-        self.add_timestamp('Log finished')
+        self.add_timestamp('LOG_END')
         self.time_log_end = get_time()
         del self._jtop
 

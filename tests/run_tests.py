@@ -141,10 +141,12 @@ def _individual_test(model_name: str, in_data, conn: Connection, do_quantize: bo
     sleep(5) # buffer time between loading and generation for power
 
     conn.send('GENERATE_START')
-    output, _ = hf_models.generate_from_input(mdl, tk, in_data)
+    output, new_tokens = hf_models.generate_from_input(mdl, tk, in_data)
     conn.send('GENERATE_END')
 
     # TEST END
+    conn.send(f'TOKENS:{len(new_tokens)}')
+    print(output)
     conn.close()
 
 
@@ -152,7 +154,7 @@ def _individual_test(model_name: str, in_data, conn: Connection, do_quantize: bo
 for m in models:
     for i in range(iterations):
         m_subname = m.split('/')[-1]
-        print(f'### Beginning test of {m_subname} ({i+1}/{iterations})')
+        print(f'\n### Beginning test of {m_subname} ({i+1}/{iterations})')
 
         test_log = Log()
         test_log.begin()
@@ -166,7 +168,12 @@ for m in models:
         proc.start()
         while proc.is_alive():
             if msg_recv.poll():
-                test_log.add_timestamp(str(msg_recv.recv()))
+                message = str(msg_recv.recv())
+                test_log.add_timestamp(message)
+                msg_var = message.split(':')
+                if len(msg_var) > 1:
+                    if msg_var[0] == 'TOKENS':
+                        test_log.tokens_generated = int(msg_var[1])
         proc.join()
         if not msg_send.closed:
             msg_send.close()
