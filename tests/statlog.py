@@ -13,8 +13,12 @@
 # 
 # Liam Seymour 6/18/24
 
+import importlib.util
+jtop_exists = importlib.util.find_spec('jtop') is not None
+if jtop_exists:
+    from jtop import jtop
+
 from json import dumps, loads, JSONDecoder, JSONEncoder
-from jtop import jtop
 from time import perf_counter, sleep
 from typing import Any
 
@@ -56,7 +60,8 @@ class Log:
     accuracy: float # TODO: Add accuracy measurement
     '''Accuracy of the test (WIP)'''
 
-    _jtop: jtop
+    if jtop_exists:
+        _jtop: jtop
 
     def __init__(self):
         self.time_log_start = -1
@@ -71,7 +76,7 @@ class Log:
     def _t(self) -> float:
         return get_time() - self.time_log_start
 
-    def _log_cb(self, jetson: jtop):
+    def _log_cb(self, jetson):
         '''internal logging callback function for jtop'''
         # get time since the log began
         t = self._t()
@@ -100,7 +105,16 @@ class Log:
         '''Adds a timestamped message to the log.'''
         if self.time_log_start == -1:
             raise RuntimeError('Attempted to add a timestamp to a log before it was started!')
+        if self.get_timestamp(info) == -1:
+            raise RuntimeError('Attempted to add a timestamp to a log when the timestamp name already exists!')
         self.timestamps.append(LogEntry(self._t(), info))
+    
+    def get_timestamp(self, flag: str) -> float:
+        '''Returns the time for the given timestamp, or -1 if it doesn't exist.'''
+        for entry in self.timestamps:
+            if entry.value == flag:
+                return entry.time
+        return -1
     
     def log_accuracy(self, acc: float):
         '''Stores the determined accuracy of the model during the test. (WIP)'''
@@ -210,6 +224,8 @@ class Log:
         '''Begin logging statistics. Raises a RuntimeError if the log is not a new instance.'''
         if self.time_log_start != -1:
             raise RuntimeError('Attempted to start a log after it had already been started once!')
+        if not jtop_exists:
+            raise ImportError('Cannot begin log, jtop is not installed!')
         self._jtop = jtop(interval=interval)
         self._jtop.attach(self._log_cb)
         self.time_log_start = get_time()
@@ -222,6 +238,8 @@ class Log:
             raise RuntimeError('Attempted to end a log when it hasn\'t been started!')
         if self.time_log_end != -1:
             raise RuntimeError('Attempted to end a log after it had already ended!')
+        if not jtop_exists:
+            raise ImportError('Cannot end log, jtop is not installed!')
         
         self._jtop.close()
         self.add_timestamp('Log finished')
