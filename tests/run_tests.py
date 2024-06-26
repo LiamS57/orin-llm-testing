@@ -125,6 +125,10 @@ def _individual_test(model_name: str, in_data, conn: Connection, do_quantize: bo
     # Change any content within TEST BEGIN and TEST END to change the testing behavior!
     # TEST BEGIN
 
+    conn.send('IDLE_START')
+    sleep(15)
+    conn.send('IDLE_END')
+
     conn.send('MODEL_LOAD_START')
     mdl = None
     tk = None
@@ -133,6 +137,8 @@ def _individual_test(model_name: str, in_data, conn: Connection, do_quantize: bo
     else:
         mdl, tk = hf_models.load_model(model_name)
     conn.send('MODEL_LOAD_END')
+
+    sleep(5) # buffer time between loading and generation for power
 
     conn.send('GENERATE_START')
     output = hf_models.generate_from_input(mdl, tk, in_data)
