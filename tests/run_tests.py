@@ -129,6 +129,8 @@ def _individual_test(model_name: str, in_data, conn: Connection, do_quantize: bo
     sleep(15)
     conn.send('IDLE_END')
 
+    sleep(3) # buffer time
+
     conn.send('MODEL_LOAD_START')
     mdl = None
     tk = None
@@ -138,7 +140,7 @@ def _individual_test(model_name: str, in_data, conn: Connection, do_quantize: bo
         mdl, tk = hf_models.load_model(model_name)
     conn.send('MODEL_LOAD_END')
 
-    sleep(5) # buffer time between loading and generation for power
+    sleep(3) # buffer time
 
     conn.send('GENERATE_START')
     output, new_tokens = hf_models.generate_from_input(mdl, tk, in_data)
@@ -157,8 +159,8 @@ for m in models:
         print(f'\n### Beginning test of {m_subname} ({i+1}/{iterations})')
 
         test_log = Log()
-        test_log.begin()
-        sleep(5) # buffer time to see power before generation
+        test_log.begin(interval=0.1)
+        sleep(3) # buffer time
 
         # here we put all of the model loading and usage in a separate process
         # this allows us to cleanly release all memory, both CPU and GPU
@@ -179,7 +181,7 @@ for m in models:
             msg_send.close()
         msg_recv.close()
 
-        sleep(5) # buffer time to see power after generation
+        sleep(3) # buffer time
         test_log.end()
         print(f'### Finished test of {m_subname} ({i+1}/{iterations})')
 
