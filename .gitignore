@@ -7,5 +7,8 @@ tests/__pycache__/
 tests/testing/
 tests/out/
 
+# Analysis ignores
+analysis/__pycache__/
+
 # Setup temporary files/directories
 tmp/
