@@ -126,6 +126,7 @@ def _individual_test(model_name: str, in_data, conn: Connection, do_quantize: bo
     # TEST BEGIN
 
     conn.send('IDLE_START')
+    print('Running idle period for power baseline')
     sleep(15)
     conn.send('IDLE_END')
 
