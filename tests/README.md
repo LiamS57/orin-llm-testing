@@ -35,10 +35,23 @@ For more usage information, use the ```--help``` option.
 ### Helper libraries
 
 [```hf_models.py```](./hf_models.py) provides helper functions for simplifying the usage of HuggingFace LLM models. These functions can reduce text generation to three lines of code:
-```
+
+```python
 import hf_models
 mdl, tk = hf_models.load_model_quantized("EleutherAI/pythia-70m-deduped")
 output, _ = hf_models.generate_from_input(mdl, tk, "Hello there! My name is")
 ```
 
 [```statlog.py```](./statlog.py) provides a timestamp-based logging system using JTop to log several stats of the Jetson. Once an instance of the log begins, it takes continuous readings of Jetson stats until stopped. Timestamps can be added at specific points during a test to signify when an event occurs. The log can be exported to/imported from JSON format files for storage/transfer off the Jetson device (i.e. before a reflash).
+
+## Additional Information
+
+### Increasing JTop sample rate
+
+At installation, the minimum sample time for the internal JTop service is 500ms, regardless of what the interval is set to in the scripts. To change this, you must edit the systemd service file (jtop.service) and re-enable/restart it.
+
+For example, to change the rate to 100ms, adjust the jtop.service file (located at /etc/systemd/system/jtop.service) so that the ```ExecStart``` line looks like this:
+```
+ExecStart=/usr/local/bin/jtop --force -r 100
+```
+Afterwards, simply re-enable and restart the service.
