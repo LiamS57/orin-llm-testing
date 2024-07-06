@@ -16,10 +16,17 @@ if [ ! -d $HF_ENV ]; then
     source $SETUP_SH_DIR/setup_venv.sh
 fi
 
+# install jetson-stats (jtop) outside of the venv (required)
+sudo pip install -U jetson-stats
+if [ $? -ne 0 ]; then
+	echo "Pip install of additional required packages failed! Aborting"
+	exit 1
+fi
+
 # enter venv
 source $HF_ENV/bin/activate
 
-# install jetson-stats (jtop)
+# install jetson-stats in venv, along with other packages
 echo "##### Installing additional required pip packages #####"
 pip install -U jetson-stats matplotlib pandas
 if [ $? -ne 0 ]; then
