@@ -15,13 +15,16 @@ models_filepath = 'models.txt'
 input_filepath = 'input.txt'
 iterations = 5
 output_dir = 'out'
-suffix = ''
+tags = list()
 opt_no_erase = False
 opt_no_quant = False
+num_tokens_to_gen = 64
+is_dry = False
 
 # function for printing the usage text
 def print_usage_help():
     print("Usage: run_tests.py [--OPTION[=...]]...\n")
+    print("  --dry              Don't run tests, just show test configuration")
     print("  --help             Shows this help")
     print("  --modelsfile=...   Uses the given file to look for LLM model names (Default: ./models.txt)")
     print("  --inputfile=...    Uses the given file as input for text generation (Default: ./input.txt)")
@@ -29,15 +32,18 @@ def print_usage_help():
     print("  --no-erase         Prevents the script from erasing previously cached models")
     print("  --no-quant         Forces the models to be loaded without quantization")
     print("  --outputdir=...    Outputs log files to the given directory (Default: ./out)")
-    print("  --suffix=...       Adds the given suffix to the generated log files")
+    print("  --tag=...          Adds the given tag to the generated log files, can be called multiple times")
+    print("  --tokens=...       Sets the number of tokens to generate (Default: 64)")
     print("\nExamples:")
-    print("  run_tests.py --iterations=3 --suffix=fewer-iterations")
+    print("  run_tests.py --iterations=3 --tag=fewer-iterations --tag=hello")
     print("  run_tests.py --no-erase --outputdir=./logs\n")
 
 # process command-line arguments
 for arg in sys.argv[1:]:
     # non-key-value args
     match arg:
+        case "--dry":
+            is_dry = True
         case "--help":
             print_usage_help()
             exit(0)
@@ -66,26 +72,15 @@ for arg in sys.argv[1:]:
                     iterations = int(opt_data)
                 case "--outputdir":
                     output_dir = os.path.abspath(opt_data)
-                case "--suffix":
-                    suffix = opt_data
+                case "--tag":
+                    tags.append(opt_data)
+                case "--tokens":
+                    num_tokens_to_gen = int(opt_data)
                 case _:
                     print(f'Unknown option: {opt_var}\n')
                     print_usage_help()
                     exit(1)
 
-
-# post-argument-checking imports (to prevent time delay)
-import hf_models
-from statlog import Log
-
-from datetime import datetime
-from multiprocessing import Pipe, Process
-from multiprocessing.connection import Connection
-from pathlib import Path
-from time import sleep
-
-# set up datestring for subfolder
-date_str = datetime.now().strftime('%Y-%m-%d_%H%M%S')
 
 # load models from the list of names in the given file
 print("Loading model names...", end='')
@@ -102,6 +97,34 @@ with open(input_filepath, 'r') as input_file:
     input_data = '\n'.join(input_file.readlines())
 print(f'Got {len(input_data)} characters')
 
+# set up suffix from tags
+suffix = '_'.join(tags)
+
+# dryness check
+if is_dry:
+    print(f'Output directory: {os.path.abspath(output_dir)}')
+    print(f'# of tokens to generate: {num_tokens_to_gen}')
+    print(f'# of iterations: {iterations}')
+    print(f'Erase model cache? {"NO" if opt_no_erase else "YES"}')
+    print(f'4-bit quantize? {"NO" if opt_no_quant else "YES"}')
+    print(f'Models file: {os.path.abspath(models_filepath)}')
+    print(f'Input file: {os.path.abspath(input_filepath)}')
+    print(f'Suffix: {suffix}')
+    exit(0)
+
+
+# post-argument-checking imports (to prevent time delay)
+import hf_models
+from statlog import Log
+
+from datetime import datetime
+from multiprocessing import Pipe, Process
+from multiprocessing.connection import Connection
+from pathlib import Path
+from time import sleep
+
+# set up datestring for subfolder
+date_str = datetime.now().strftime('%Y-%m-%d_%H%M%S')
 
 # login to huggingface hub (for access to gated models)
 hf_models.login_by_token()
@@ -120,7 +143,7 @@ sleep(3)
 
 # The following function is used in a separate process to run the generation test.
 # Add/change any desired testing functionality in this function to ensure it is tested on each model!
-def _individual_test(model_name: str, in_data, conn: Connection, do_quantize: bool):
+def _individual_test(model_name: str, in_data, conn: Connection, do_quantize: bool, tokens_to_gen: int):
     '''Test method content, performed on a separate process.'''
     # Change any content within TEST BEGIN and TEST END to change the testing behavior!
     # TEST BEGIN
@@ -144,7 +167,7 @@ def _individual_test(model_name: str, in_data, conn: Connection, do_quantize: bo
     sleep(3) # buffer time
 
     conn.send('GENERATE_START')
-    output, new_tokens = hf_models.generate_from_input(mdl, tk, in_data)
+    output, new_tokens = hf_models.generate_from_input(mdl, tk, in_data, max_new_tokens=tokens_to_gen)
     conn.send('GENERATE_END')
 
     # TEST END
@@ -167,7 +190,7 @@ for m in models:
         # this allows us to cleanly release all memory, both CPU and GPU
         # additionally, a pipe is used to send back timestamped messages for the log
         msg_recv, msg_send = Pipe()
-        proc = Process(target=_individual_test, args=[m, input_data, msg_send, not opt_no_quant])
+        proc = Process(target=_individual_test, args=[m, input_data, msg_send, not opt_no_quant, num_tokens_to_gen])
         proc.start()
         while proc.is_alive():
             if msg_recv.poll():
@@ -184,7 +207,7 @@ for m in models:
 
         sleep(3) # buffer time
         test_log.end()
-        print(f'### Finished test of {m_subname} ({i+1}/{iterations})')
+        print(f'### Finished test of {m_subname} ({i+1}/{iterations}), generated {test_log.tokens_generated} tokens')
 
         # save the log to a file for analysis
         outfolder = os.path.join(os.path.abspath(output_dir), date_str)
