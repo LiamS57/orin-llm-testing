@@ -3,7 +3,7 @@
 # Liam Seymour 6/26/24
 
 #import pandas as pd
-#import numpy as np
+import numpy as np
 import os
 import sys
 
@@ -14,10 +14,10 @@ class LogPeriod:
     name: str
     i: int
     length: float
-    freq_gpu: list[tuple[float, float]]
-    memory_ram: list[tuple[float, float]]
-    memory_gpu: list[tuple[float, float]]
-    power: list[tuple[float, float]]
+    freq_gpu: np.ndarray
+    memory_ram: np.ndarray
+    memory_gpu: np.ndarray
+    power: np.ndarray
     tokens_generated: int
     accuracy: float
 
@@ -100,43 +100,47 @@ def load_logs_from_folder(in_folder: str) -> TaggedDataList:
             start, end = _get_timestamp_period(log, pname)
             log_period.length = end - start
 
-            log_period.freq_gpu = list()
+            tmp: list[tuple[float, float]] = list()
             for entry in log.freq_gpu:
                 if entry.time >= start and entry.time <= end:
-                    log_period.freq_gpu.append((entry.time - start, entry.value))
+                    tmp.append((entry.time - start, entry.value))
+            log_period.freq_gpu = np.array(tmp)
             
-            log_period.memory_ram = list()
+            tmp: list[tuple[float, float]] = list()
             # just going to add up total if there are multiple pids
             for pid, entries in log.memory_ram.items():
                 for entry in entries:
                     if entry.time >= start and entry.time <= end:
                         p_t = entry.time - start
                         flag = False
-                        for prev_ram in log_period.memory_ram:
+                        for prev_ram in tmp:
                             if not flag and prev_ram[0] == p_t:
                                 flag = True
                                 prev_ram[1] += entry.value
                         if not flag:
-                            log_period.memory_ram.append((p_t, entry.value))
+                            tmp.append((p_t, entry.value))
+            log_period.memory_ram = np.array(tmp)
             
-            log_period.memory_gpu = list()
+            tmp: list[tuple[float, float]] = list()
             # just going to add up total if there are multiple pids
             for pid, entries in log.memory_gpu.items():
                 for entry in entries:
                     if entry.time >= start and entry.time <= end:
                         p_t = entry.time - start
                         flag = False
-                        for prev_gpu in log_period.memory_gpu:
+                        for prev_gpu in tmp:
                             if not flag and prev_gpu[0] == p_t:
                                 flag = True
                                 prev_gpu[1] += entry.value
                         if not flag:
-                            log_period.memory_gpu.append((p_t, entry.value))
+                            tmp.append((p_t, entry.value))
+            log_period.memory_gpu = np.array(tmp)
 
-            log_period.power = list()
+            tmp: list[tuple[float, float]] = list()
             for entry in log.power:
                 if entry.time >= start and entry.time <= end:
-                    log_period.power.append((entry.time - start, entry.value))
+                    tmp.append((entry.time - start, entry.value))
+            log_period.power = np.array(tmp)
             
             period_list.append(log_period)
         
