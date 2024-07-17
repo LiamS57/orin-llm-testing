@@ -5,10 +5,12 @@ hf-env/
 tests/access_token
 tests/__pycache__/
 tests/testing/
-tests/out/
+tests/out*/
 
 # Analysis ignores
 analysis/__pycache__/
+analysis/data/
+analysis/failed/
 
 # Setup temporary files/directories
 tmp/
