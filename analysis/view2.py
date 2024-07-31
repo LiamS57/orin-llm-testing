@@ -17,17 +17,17 @@ in_folder = os.path.abspath(sys.argv[1])
 data = log_loader.load_logs_from_folder(in_folder)
 
 
-pm_order = ['7W', '7W-AI', '7W-CPU', '10W', '15W', '20W', '25W', '30W', '40W', 'MAXN']
-model_order = ['pythia-70m-deduped', 'pythia-160m-deduped', 'pythia-410m-deduped', 'pythia-1b-deduped', 'pythia-1.4b-deduped']
 def df_sort_help(x: pd.Index):
-    return pd.Index(model_order)
+    return pd.Index(log_loader.model_order)
 
 def _integrate(arr: np.ndarray) -> float:
     return np.trapezoid(y=arr.T[1], x=arr.T[0])
 
 
+device = "orin-nano-8gb"
+max_pm = log_loader.device_pm_dict[device][0]
 frame_data: dict[str, dict[str, float]] = dict()
-for tagged in data.with_tags("MAXN", "orin-nx-16gb"):
+for tagged in data.with_tags(max_pm, device):
     print(tagged._tags)
     lat_load = median([tagged.period('MODEL_LOAD', i).length for i in range(5)])
     lat_gen = median([tagged.period('GENERATE', i).length for i in range(5)])
@@ -45,14 +45,14 @@ for k, v in frame_data.items():
     for h, j in v.items():
         print(f'{k}, {h} -> {j}')
 
-df = pd.DataFrame(frame_data).T.sort_index(key=lambda _: pd.Index(model_order))
+df = pd.DataFrame(frame_data).T.sort_index(key=lambda _: pd.Index(log_loader.model_order))
 print(df)
 
 
 fig, ax = plt.subplots()
 df.plot(kind='bar', ax=ax)
-ax.set_xticklabels(model_order, rotation=10)
-ax.set_title('Total Run Time with/without Quantization per\nModel (Orin NX 16GB at MAXN)')
+ax.set_xticklabels(log_loader.model_order, rotation=10)
+ax.set_title(f'Total Run Time with/without Quantization per\nModel ({device} at {max_pm})')
 ax.set_ylabel('Time (seconds)')
 plt.tight_layout()
 plt.show()

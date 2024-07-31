@@ -176,3 +176,19 @@ def load_logs_from_folder(in_folder: str) -> TaggedDataList:
     ret = TaggedDataList()
     ret._list = tagged_data_list
     return ret
+
+
+def m_name(param):
+    return f'pythia-{param}-deduped'
+
+device_order = ['agx-orin-devkit', 'agx-orin-32gb', 'orin-nx-16gb', 'orin-nx-8gb', 'orin-nano-8gb', 'orin-nano-4gb']
+pm_order = ['7W', '7W-AI', '7W-CPU', '10W', '15W', '20W', '25W', '30W', '40W', '50W', 'MAXN']
+model_order = [m_name('70m'), m_name('160m'), m_name('410m'), m_name('1b'), m_name('1.4b')]
+device_pm_dict = {
+    'agx-orin-devkit': ['MAXN', '50W', '30W', '15W'],
+    'agx-orin-32gb': ['MAXN', '40W', '30W', '15W'],
+    'orin-nx-16gb': ['MAXN', '25W', '15W', '10W'],
+    'orin-nx-8gb': ['MAXN', '20W', '15W', '10W'],
+    'orin-nano-8gb': ['15W', '7W'],
+    'orin-nano-4gb': ['10W', '7W-AI', '7W-CPU']
+}
