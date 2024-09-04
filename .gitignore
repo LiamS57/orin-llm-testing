@@ -9,7 +9,7 @@ tests/out*/
 
 # Analysis ignores
 analysis/__pycache__/
-analysis/data/
+analysis/data*/
 analysis/failed/
 
 # Setup temporary files/directories
