@@ -6,7 +6,7 @@ from statistics import median
 import os
 import log_loader
 
-in_folder = os.path.abspath('data')
+in_folder = os.path.abspath('data-usb')
 data = log_loader.load_logs_from_folder(in_folder)
 
 dev = 'agx-orin-32gb'

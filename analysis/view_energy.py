@@ -8,7 +8,7 @@ from statistics import median
 import os
 import log_loader
 
-in_folder = os.path.abspath('data')
+in_folder = os.path.abspath('data-usb/week7')
 data = log_loader.load_logs_from_folder(in_folder)
 
 runs_cols = [(0.2, 0.8 - n * 0.2, 0.2) for n in range(5)]
