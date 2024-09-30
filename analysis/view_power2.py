@@ -1,6 +1,7 @@
 import pandas as pd
 import matplotlib.pyplot as plt
-from matplotlib.axes import Axes
+from matplotlib import cm
+from matplotlib.patches import Patch
 import numpy as np
 import os
 import json
@@ -12,7 +13,8 @@ def m_name(param):
     return f'pythia-{param}-deduped'
 device_order = ['agx-orin-devkit', 'agx-orin-32gb', 'orin-nx-16gb', 'orin-nx-8gb', 'orin-nano-8gb', 'orin-nano-4gb']
 pm_order = ['7W', '7W-AI', '7W-CPU', '10W', '15W', '20W', '25W', '30W', '40W', '50W', 'MAXN']
-model_order = [m_name('70m'), m_name('160m'), m_name('410m'), m_name('1b'), m_name('1.4b')]
+model_params = ['70m', '160m', '410m', '1b', '1.4b']
+model_order = [m_name(x) for x in model_params]
 device_pm_dict = {
     'agx-orin-devkit': ['MAXN', '50W', '30W', '15W'],
     'agx-orin-32gb': ['MAXN', '40W', '30W', '15W'],
@@ -109,10 +111,27 @@ print(df)
 
 runs_cols = [(0.85 - n * 0.15, 0.15, 0.15) for n in range(6)]
 fig, ax = plt.subplots()
-df.plot(kind='bar', ax=ax, color=runs_cols)
-ax.set_xticklabels(model_order, rotation=13, fontsize=12)
-ax.set_title(f'Maximum Power usage during Generation\n(median run, max power model, with quantization)', fontsize=12)
-ax.set_ylabel('Max Power (W)', fontsize=12)
+# df.plot(kind='bar', ax=ax, color=runs_cols)
+
+
+bspace = 9
+cmap = lambda idev: cm.Reds(0.3 + 0.7 * (idev / 6.0))
+for idev in range(len(device_order)):
+    dev = device_order[idev]
+    xi = [(j*bspace)+idev for j in range(len(model_order))]
+    ax.bar(x=xi, height=df[dev], color=cmap(idev), width=1)
+
+leg = [Patch(facecolor=cmap(j), label=device_order[j]) for j in range(len(device_order))]
+ax.legend(handles=leg)
+
+
+ax.set_xticks([(j*bspace)+2.5 for j in range(len(model_order))])
+ax.set_xticklabels(model_params, rotation=0)
+ax.set_xlabel('Pythia Model')
+# ax.set_title(f'Maximum Power usage during Generation\n(median run, max power model, with quantization)', fontsize=12)
+ax.set_ybound(lower=0, upper=30)
+ax.set_yticks(list(range(0, 31, 5)))
+ax.set_ylabel('Peak Power (W)')
 plt.show()
 
 

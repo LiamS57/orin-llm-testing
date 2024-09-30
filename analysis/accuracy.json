@@ -1,0 +1,22 @@
+{
+    "EleutherAI/pythia-70m-deduped,fp16": [0.41944887856515484, 159.82831954956055],
+    "EleutherAI/pythia-70m-deduped,fp32": [0.4366733306647019, 294.15645599365234],
+    "EleutherAI/pythia-160m-deduped,fp16": [0.48719490782413016, 360.6068344116211],
+    "EleutherAI/pythia-160m-deduped,fp32": [0.49349300446070127, 670.2133026123047],
+    "EleutherAI/pythia-410m-deduped,fp16": [0.5702131716537671, 875.1140594482422],
+    "EleutherAI/pythia-410m-deduped,fp32": [0.5696772481744449, 1648.2273864746094],
+    "EleutherAI/pythia-1b-deduped,fp16": [0.6092089789646967, 2009.8222961425781],
+    "EleutherAI/pythia-1b-deduped,fp32": [0.6090330791655273, 3939.6426391601562],
+    "EleutherAI/pythia-1.4b-deduped,fp16": [0.634553083617645, 2806.228073120117],
+    "EleutherAI/pythia-1.4b-deduped,fp32": [0.6339728196062493, 5504.454681396484],
+    "EleutherAI/pythia-70m-deduped,int8": [0.41607508104175756, 141.82831954956055],
+    "EleutherAI/pythia-70m-deduped,fp4": [0.3871329875540505, 132.82831954956055],
+    "EleutherAI/pythia-160m-deduped,int8": [0.48860272007823813, 279.6068344116211],
+    "EleutherAI/pythia-160m-deduped,fp4": [0.4297094940554165, 239.1068344116211],
+    "EleutherAI/pythia-410m-deduped,int8": [0.5657310251589309, 587.1140594482422],
+    "EleutherAI/pythia-410m-deduped,fp4": [0.4676401473480177, 443.1140594482422],
+    "EleutherAI/pythia-1b-deduped,int8": [0.6074620422784304, 1241.8222961425781],
+    "EleutherAI/pythia-1b-deduped,fp4": [0.5946440084894833, 857.8222961425781],
+    "EleutherAI/pythia-1.4b-deduped,int8": [0.6309328820332009, 1654.2280731201172],
+    "EleutherAI/pythia-1.4b-deduped,fp4": [0.5637654155526405, 1078.2280731201172]
+}

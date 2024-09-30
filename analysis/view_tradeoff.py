@@ -95,21 +95,22 @@ pm = device_pm_dict[dev][0]
 with_dev_pm = [x for x in existing if dev in x and pm in x]
 
 for m in model_order:
-    d[m] = dict()
+    mi = m.split('-')[1]
+    d[mi] = dict()
 
     with_m = [x for x in with_dev_pm if m in x]
-
-    latencies = list()
-    for log in [load_log(x[-1]) for x in with_m if 'no-quant' not in x]:
-        t_start, t_end = get_times_between_stamps(log, 'GENERATE')
-        latencies.append(t_end - t_start)
-    d[m]['q'] = np.median(latencies) # median value in iterations
 
     latencies = list()
     for log in [load_log(x[-1]) for x in with_m if 'no-quant' in x]:
         t_start, t_end = get_times_between_stamps(log, 'GENERATE')
         latencies.append(t_end - t_start)
-    d[m]['nq'] = np.median(latencies) # median value in iterations
+    d[mi]['nq'] = np.median(latencies)
+
+    latencies = list()
+    for log in [load_log(x[-1]) for x in with_m if 'no-quant' not in x]:
+        t_start, t_end = get_times_between_stamps(log, 'GENERATE')
+        latencies.append(t_end - t_start)
+    d[mi]['q'] = np.median(latencies)
 
 df = pd.DataFrame(d).T
 print(df)
@@ -118,55 +119,16 @@ print(df)
 
 runs_cols = [(0.85, 0.15, 0.15), (0.15, 0.15, 0.85)]
 fig, ax = plt.subplots()
-df.plot(kind='barh', ax=ax, color=runs_cols)
+df.plot(kind='line', ax=ax, style='o-', colormap='bwr')
+
+ax.set_xticks([0, 1, 2, 3, 4])
+ax.set_xbound(lower=-0.2, upper=4.2)
+ax.set_ybound(lower=0)
 # ax.set_xticklabels(model_order, rotation=13, fontsize=12)
-ax.set_title(f'Quantization Comparison for Generation Latency\n({dev} at {pm}, median run)', fontsize=12)
-ax.set_xlabel('Latency (s)', fontsize=12)
-ax.legend(['4-bit Quantization', 'No Quantization'])
-plt.tight_layout()
+# ax.set_title(f'Quantization Comparison for Generation Latency\n({dev} at {pm}, median run)', fontsize=12)
+ax.set_ylabel('Latency (s)')
+ax.set_xlabel('Pythia Model')
+ax.legend(['No Quantization', '4-bit Quantization'])
+# plt.tight_layout()qqq
+print(f'Quantization Comparison for Generation Latency\n({dev} at {pm}, median run)')
 plt.show()
-
-
-
-
-
-#     for pm in device_pm_dict[dev]:
-#         with_pm = [x for x in with_dev if pm in x]
-#         #with_pm_q = [x for x in with_pm if 'no-quant' not in x]
-#         #with_pm_nq = [x for x in with_pm if 'no-quant' in x]
-#         # print(f'{dev} {pm} -> {len(with_pm_q)}')
-#         with_pm.sort(key=lambda x: (len(x), model_order.index(x[2]), x[3]))
-#         # max_i = 0
-#         # for j in range(len(with_pm)):
-#         #     if 'no-quant' not in with_pm[j]:
-#         #         with_pm[j].insert(4, 'quant')
-#         #     max_i = max(with_pm[j][3], max_i)
-
-        
-#         info = dict()
-#         info['quant'] = dict()
-#         info['no-quant'] = dict()
-#         for llm in model_order:
-#             info['quant'][llm] = list()
-#             info['no-quant'][llm] = list()
-
-#         for tags in with_pm:
-#             path = tags[-1]
-#             with open(path, 'r') as fp:
-#                 data = json.load(fp)
-#                 lat = get_latency_between_stamps(data, 'MODEL_LOAD')
-#                 if 'no-quant' in tags:
-#                     info['no-quant'][tags[2]].append(lat)
-#                 else:
-#                     info['quant'][tags[2]].append(lat)
-
-        
-#         print(f'& {pm}', end='')
-#         for q in ['quant', 'no-quant']:
-#             for llm in model_order:
-#                 median = -1
-#                 if len(info[q][llm]) > 0:
-#                     median = np.median(info[q][llm])
-#                 print(f' & {median:.3f}', end='')
-
-#         print(' \\\\')
