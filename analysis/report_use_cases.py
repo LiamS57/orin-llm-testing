@@ -1,3 +1,4 @@
+from math import isnan
 import numpy as np
 import os
 import json
@@ -161,31 +162,77 @@ for dev in device_order:
 # for p in results:
 #     print(p)
 # exit()
+print('Extrema:')
+for k in ['lat', 'mem', 'pwr', 'enr', 'acc']:
+    res = [x[k] for x in results if not isnan(x[k])]
+    print(f'  {k} -> min: {np.min(res)}, max: {np.max(res)}')
+print('\n\n')
+
+
+uc1 = [[30, 20, 10], # below this power
+       [50, 50, 40]] # above this acc
+uc2 = [[240, 240, 120], # below this energy
+       [1400, 700, 700]] # below this memory
+uc3 = [[35, 45, 55], # above this acc
+       [800, 1200, 2000]] # below this memory
+
 
 print('Use Case #1')
-for uc1_pwr_max, uc1_acc_min in zip([15], [50]): # below this power, above this acc
+uc1_sol = list()
+for uc1_pwr_max, uc1_acc_min in zip(uc1[0], uc1[1]): # below this power, above this acc
     results_uc1 = [x for x in results if x['pwr'] <= uc1_pwr_max and x['acc'] >= uc1_acc_min]
     results_uc1.sort(key=lambda x: -x['acc']) # highest accuracy
     if len(results_uc1):
         print(f'   <{uc1_pwr_max}W, >{uc1_acc_min}% -> {results_uc1[0]}')
+        uc1_sol.append(results_uc1[0]['conf'])
+        pwr_other = [x["pwr"] for x in results_uc1]
+        acc_other = [x["acc"] for x in results_uc1]
+        print(f'       extremes of results: pwr: {np.min(pwr_other)}-{np.max(pwr_other)}, acc: {np.min(acc_other)}-{np.max(acc_other)}')
     else:
         print(f'   <{uc1_pwr_max}W, >{uc1_acc_min}% -> No Results')
 
 
 print('Use Case #2')
-for uc2_enr_max, uc2_mem_max in zip([600, 300, 150], [2000, 1000, 500]): # below this energy, below this memory
+uc2_sol = list()
+for uc2_enr_max, uc2_mem_max in zip(uc2[0], uc2[1]): # below this energy, below this memory
     results_uc2 = [x for x in results if x['enr'] <= uc2_enr_max and x['mem'] <= uc2_mem_max]
     results_uc2.sort(key=lambda x: x['lat']) # lowest latency
     if len(results_uc2):
         print(f'   <{uc2_enr_max}J, <{uc2_mem_max}MB -> {results_uc2[0]}')
+        uc2_sol.append(results_uc2[0]['conf'])
+        enr_other = [x["enr"] for x in results_uc2]
+        mem_other = [x["mem"] for x in results_uc2]
+        print(f'       extremes of results: enr: {np.min(enr_other)}-{np.max(enr_other)}, mem: {np.min(mem_other)}-{np.max(mem_other)}')
     else:
         print(f'   <{uc2_enr_max}J, <{uc2_mem_max}MB -> No Results')
 
 print('Use Case #3')
-for uc3_acc_min, uc3_mem_max in zip([40, 50, 55], [40000, 30000, 5000]): # above this acc, below this memory
+uc3_sol = list()
+for uc3_acc_min, uc3_mem_max in zip(uc3[0], uc3[1]): # above this acc, below this memory
     results_uc3 = [x for x in results if x['acc'] >= uc3_acc_min and x['mem'] <= uc3_mem_max]
     results_uc3.sort(key=lambda x: x['lat']) # lowest latency
     if len(results_uc3) > 0:
         print(f'   >{uc3_acc_min}%, <{uc3_mem_max}MB -> {results_uc3[0]}')
+        uc3_sol.append(results_uc3[0]['conf'])
+        acc_other = [x["acc"] for x in results_uc3]
+        mem_other = [x["mem"] for x in results_uc3]
+        print(f'       extremes of results: acc: {np.min(acc_other)}-{np.max(acc_other)}, mem: {np.min(mem_other)}-{np.max(mem_other)}')
     else:
         print(f'   >{uc3_acc_min}%, <{uc3_mem_max}MB -> No Results')
+
+
+input()
+print('\n\n')
+
+for uc, sol in zip([uc1, uc2, uc3], [uc1_sol, uc2_sol, uc3_sol]):
+    print('\\hline')
+    for j in range(len(sol)):
+        conf = sol[j].split(',')
+        uc_p1 = uc[0][j]
+        uc_p2 = uc[1][j]
+        # print(f'{uc_p1} & {uc_p2} & {ctext} \\\\')
+        print(f'\\multirow{{2}}{{*}}{{ {uc_p1} }} & \\multirow{{2}}{{*}}{{ {uc_p2} }}')
+        print(f'& {conf[0]}, {conf[1]}, \\\\')
+        print(f'& & {conf[2]}, {conf[3]} \\\\')
+        print('\\hline')
+    print()
