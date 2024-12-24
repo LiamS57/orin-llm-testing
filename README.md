@@ -25,3 +25,19 @@ $ source ./hf_env/bin/activate
 ```
 
 Now the testing scripts located in [tests](/tests/) should work properly.
+
+## Citation
+
+If you would like to use this utility for further research, please use the following BibTeX citation to reference our paper:
+
+```
+@misc{seymour2024largelanguagemodelssmall,
+      title={Large Language Models on Small Resource-Constrained Systems: Performance Characterization, Analysis and Trade-offs}, 
+      author={Liam Seymour and Basar Kutukcu and Sabur Baidya},
+      year={2024},
+      eprint={2412.15352},
+      archivePrefix={arXiv},
+      primaryClass={cs.LG},
+      url={https://arxiv.org/abs/2412.15352}, 
+}
+```
