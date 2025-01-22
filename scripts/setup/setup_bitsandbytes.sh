@@ -14,8 +14,6 @@
 # testing phase will automatically install the official 
 # PyTorch pip package which does not work! Please ensure 
 # the correct PyTorch package is installed beforehand!
-# 
-# Liam Seymour 6/13/24
 
 MAIN_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && cd ../.. && pwd )
 source $MAIN_DIR/scripts/setup/setup_vars.sh

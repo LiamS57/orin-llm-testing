@@ -5,8 +5,6 @@
 # SDK installation, it is not necessarily accessible. This 
 # script verifies the installation was successful and adds
 # the CUDA bin directory to the path.
-# 
-# Liam Seymour 6/13/24
 
 MAIN_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && cd ../.. && pwd )
 source $MAIN_DIR/scripts/setup/setup_vars.sh

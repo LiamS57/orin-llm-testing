@@ -9,8 +9,6 @@
 #
 # This script also prevents any script that sources it from
 # running with root privileges by design.
-# 
-# Liam Seymour 6/13/24
 
 MAIN_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && cd ../.. && pwd )
 SETUP_SH_DIR=$MAIN_DIR/scripts/setup

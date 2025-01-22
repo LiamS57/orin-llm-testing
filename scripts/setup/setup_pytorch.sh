@@ -6,8 +6,6 @@
 # PyTorch wheel files for each version. This script 
 # downloads and installs the file specified in
 # setup_vars.sh.
-# 
-# Liam Seymour 6/13/24
 
 MAIN_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && cd ../.. && pwd )
 source $MAIN_DIR/scripts/setup/setup_vars.sh

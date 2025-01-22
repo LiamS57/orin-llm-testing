@@ -6,8 +6,6 @@
 # This script will take longer than expected, but running
 # it with an ethernet cable connected may considerably
 # speed up the process.
-# 
-# Liam Seymour 6/13/24
 
 MAIN_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && cd ../.. && pwd )
 source $MAIN_DIR/scripts/setup/setup_vars.sh

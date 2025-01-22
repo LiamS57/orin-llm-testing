@@ -1,8 +1,6 @@
 #!/bin/bash
 
 # Removes all models stored in the huggingface cache.
-# 
-# Liam Seymour 6/12/24
 
 # prevent running in sudo
 if [ `id -u` -eq 0 ]; then

@@ -1,6 +1,4 @@
 # General helper functions for generating with LLM models from HF.
-# 
-# Liam Seymour 6/17/24
 
 from huggingface_hub import login
 from torch import float16

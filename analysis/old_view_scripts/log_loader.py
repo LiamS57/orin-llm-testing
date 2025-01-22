@@ -1,6 +1,4 @@
 # Helper script for loading a folder of logs for analysis.
-# 
-# Liam Seymour 6/26/24
 
 #import pandas as pd
 import numpy as np

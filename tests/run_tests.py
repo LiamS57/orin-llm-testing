@@ -2,8 +2,6 @@
 # 
 # Models are loaded from 'models.txt', and input is loaded from 'input.txt'.
 # Use 'run_tests.py --help' for a summary of usage options.
-# 
-# Liam Seymour 6/24/24
 
 
 # pre-argument-checking imports

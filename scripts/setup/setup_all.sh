@@ -7,8 +7,6 @@
 # order. If a failure occurs, the entire process will end.
 # This allows for a user to pick up where the process left
 # off after determining what fix is needed for the error.
-# 
-# Liam Seymour 6/13/24
 
 MAIN_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && cd ../.. && pwd )
 source $MAIN_DIR/scripts/setup/setup_vars.sh

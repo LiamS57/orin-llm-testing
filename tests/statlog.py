@@ -10,8 +10,6 @@
 # interval.
 # 
 # jtop reference: https://rnext.it/jetson_stats/reference/jtop.html 
-# 
-# Liam Seymour 6/18/24
 
 import importlib.util
 jtop_exists = importlib.util.find_spec('jtop') is not None

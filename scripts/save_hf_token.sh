@@ -2,8 +2,6 @@
 
 # Saves a hf_token from args to a file for use by the
 # testing scripts.
-# 
-# Liam Seymour 6/25/24
 
 MAIN_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && cd .. && pwd )
 TOKEN_FILE=$MAIN_DIR/tests/access_token
