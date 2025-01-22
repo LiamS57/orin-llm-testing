@@ -8,7 +8,7 @@ To run the main testing script, use the following command:
 python run_tests.py
 ```
 
-This script redownloads all the models defined in models.txt and runs several iterations of tests on each model using the input provided in input.txt. It saves logs for each test into an output folder, which has a nested folder structure based on the date/time that the tests were started. A sample of this structure follows:
+This script redownloads all the models defined in **models.txt** and runs several iterations of tests on each model using the input provided in input.txt. It saves logs for each test into an output folder, which has a nested folder structure based on the date/time that the tests were started. A sample of this structure follows:
 
 ```
 out

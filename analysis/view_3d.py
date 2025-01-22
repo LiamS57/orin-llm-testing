@@ -6,14 +6,15 @@ import numpy as np
 import os
 import json
 
-in_folder = os.path.abspath('data-usb')
+in_folder = os.path.abspath('../tests/out')
 
 # important test naming info
 def m_name(param):
     return f'pythia-{param}-deduped'
 device_order = ['agx-orin-devkit', 'agx-orin-32gb', 'orin-nx-16gb', 'orin-nx-8gb', 'orin-nano-8gb', 'orin-nano-4gb']
 pm_order = ['7W', '7W-AI', '7W-CPU', '10W', '15W', '20W', '25W', '30W', '40W', '50W', 'MAXN']
-model_order = [m_name('70m'), m_name('160m'), m_name('410m'), m_name('1b'), m_name('1.4b')]
+model_params = ['70m', '160m', '410m', '1.4b']
+model_order = [m_name(x) for x in model_params]
 device_pm_dict = {
     'agx-orin-devkit': ['MAXN', '50W', '30W', '15W'],
     'agx-orin-32gb': ['MAXN', '40W', '30W', '15W'],
@@ -155,7 +156,7 @@ for Z, cmap, norm, text in zip(Zlist, cmaplist, normlist, textlist):
     # ax.set_xlabel('Device Conf')
 
     ax.set_yticks(Yi)
-    ax.set_yticklabels(['70m', '160m', '410m', '1b', '1.4b'])
+    ax.set_yticklabels(model_params)
     for tick in ax.yaxis.get_majorticklabels():
         # tick.set_horizontalalignment('right')
         tick.set_verticalalignment('top')

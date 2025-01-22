@@ -5,14 +5,15 @@ import numpy as np
 import os
 import json
 
-in_folder = os.path.abspath('data-usb')
+in_folder = os.path.abspath('../tests/out')
 
 # important test naming info
 def m_name(param):
     return f'pythia-{param}-deduped'
 device_order = ['agx-orin-devkit', 'agx-orin-32gb', 'orin-nx-16gb', 'orin-nx-8gb', 'orin-nano-8gb', 'orin-nano-4gb']
 pm_order = ['7W', '7W-AI', '7W-CPU', '10W', '15W', '20W', '25W', '30W', '40W', '50W', 'MAXN']
-model_order = [m_name('70m'), m_name('160m'), m_name('410m'), m_name('1b'), m_name('1.4b')]
+model_params = ['70m', '160m', '410m', '1.4b']
+model_order = [m_name(x) for x in model_params]
 device_pm_dict = {
     'agx-orin-devkit': ['MAXN', '50W', '30W', '15W'],
     'agx-orin-32gb': ['MAXN', '40W', '30W', '15W'],
@@ -121,8 +122,8 @@ runs_cols = [(0.85, 0.15, 0.15), (0.15, 0.15, 0.85)]
 fig, ax = plt.subplots()
 df.plot(kind='line', ax=ax, style='o-', colormap='bwr')
 
-ax.set_xticks([0, 1, 2, 3, 4])
-ax.set_xbound(lower=-0.2, upper=4.2)
+ax.set_xticks([j for j in range(len(model_params))])
+ax.set_xbound(lower=-0.2, upper=(len(model_params) - 0.8))
 ax.set_ybound(lower=0)
 # ax.set_xticklabels(model_order, rotation=13, fontsize=12)
 # ax.set_title(f'Quantization Comparison for Generation Latency\n({dev} at {pm}, median run)', fontsize=12)

@@ -5,7 +5,7 @@ import pandas as pd
 
 def m_name(param):
     return f'pythia-{param}-deduped'
-model_params = ['70m', '160m', '410m', '1b', '1.4b']
+model_params = ['70m', '160m', '410m', '1.4b']
 model_order = [m_name(x) for x in model_params]
 
 data:dict = None
@@ -18,7 +18,8 @@ for m in model_order:
 for k, v in data.items():
     llmpath, prec = k.split(',')
     llm = llmpath.split('/')[-1]
-    parsed[llm][prec] = v
+    if llm in model_order:
+        parsed[llm][prec] = v
 
 
 # print(parsed)

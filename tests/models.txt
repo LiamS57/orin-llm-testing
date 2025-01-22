@@ -1,5 +1,4 @@
 EleutherAI/pythia-70m-deduped
 EleutherAI/pythia-160m-deduped
 EleutherAI/pythia-410m-deduped
-EleutherAI/pythia-1b-deduped
 EleutherAI/pythia-1.4b-deduped

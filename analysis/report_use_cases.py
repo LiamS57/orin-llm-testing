@@ -3,14 +3,14 @@ import numpy as np
 import os
 import json
 
-in_folder = os.path.abspath('data-usb')
+in_folder = os.path.abspath('../tests/out')
 
 # important test naming info
 def m_name(param):
     return f'pythia-{param}-deduped'
 device_order = ['agx-orin-devkit', 'agx-orin-32gb', 'orin-nx-16gb', 'orin-nx-8gb', 'orin-nano-8gb', 'orin-nano-4gb']
 pm_order = ['7W', '7W-AI', '7W-CPU', '10W', '15W', '20W', '25W', '30W', '40W', '50W', 'MAXN']
-model_params = ['70m', '160m', '410m', '1b', '1.4b']
+model_params = ['70m', '160m', '410m', '1.4b']
 model_order = [m_name(x) for x in model_params]
 device_pm_dict = {
     'agx-orin-devkit': ['MAXN', '50W', '30W', '15W'],
@@ -100,7 +100,8 @@ with open('accuracy.json', 'r') as fp:
     for k, v in af.items():
         llmpath, prec = k.split(',')
         llm = llmpath.split('/')[-1]
-        parsed[llm][prec] = v
+        if llm in model_order:
+            parsed[llm][prec] = v
 
     for llm in model_order:
         accuracy[llm] = dict()
@@ -169,70 +170,54 @@ for k in ['lat', 'mem', 'pwr', 'enr', 'acc']:
 print('\n\n')
 
 
-uc1 = [[30, 20, 10], # below this power
-       [50, 50, 40]] # above this acc
+uc1 = [[45, 30, 15], # below this power
+       [40, 30, 20]] # below this lat
 uc2 = [[240, 240, 120], # below this energy
        [1400, 700, 700]] # below this memory
-uc3 = [[35, 45, 55], # above this acc
+uc3 = [[36, 42, 48], # above this acc
        [800, 1200, 2000]] # below this memory
 
 
 print('Use Case #1')
 uc1_sol = list()
-for uc1_pwr_max, uc1_acc_min in zip(uc1[0], uc1[1]): # below this power, above this acc
-    results_uc1 = [x for x in results if x['pwr'] <= uc1_pwr_max and x['acc'] >= uc1_acc_min]
+for uc1_pwr_max, uc1_lat_max in zip(uc1[0], uc1[1]): # below this power, above this acc
+    results_uc1 = [x for x in results if x['pwr'] <= uc1_pwr_max and x['lat'] <= uc1_lat_max]
     results_uc1.sort(key=lambda x: -x['acc']) # highest accuracy
     if len(results_uc1):
-        print(f'   <{uc1_pwr_max}W, >{uc1_acc_min}% -> {results_uc1[0]}')
+        print(f'   <{uc1_pwr_max}W, <{uc1_lat_max} s -> (out of {len(results_uc1)}) {results_uc1[0]}')
         uc1_sol.append(results_uc1[0]['conf'])
         pwr_other = [x["pwr"] for x in results_uc1]
         acc_other = [x["acc"] for x in results_uc1]
-        print(f'       extremes of results: pwr: {np.min(pwr_other)}-{np.max(pwr_other)}, acc: {np.min(acc_other)}-{np.max(acc_other)}')
+        # print(f'       extremes of results: pwr: {np.min(pwr_other)}-{np.max(pwr_other)}, acc: {np.min(acc_other)}-{np.max(acc_other)}')
     else:
-        print(f'   <{uc1_pwr_max}W, >{uc1_acc_min}% -> No Results')
+        print(f'   <{uc1_pwr_max}W, <{uc1_lat_max} s -> No Results')
 
-
+input()
 print('Use Case #2')
 uc2_sol = list()
 for uc2_enr_max, uc2_mem_max in zip(uc2[0], uc2[1]): # below this energy, below this memory
     results_uc2 = [x for x in results if x['enr'] <= uc2_enr_max and x['mem'] <= uc2_mem_max]
     results_uc2.sort(key=lambda x: x['lat']) # lowest latency
     if len(results_uc2):
-        print(f'   <{uc2_enr_max}J, <{uc2_mem_max}MB -> {results_uc2[0]}')
+        print(f'   <{uc2_enr_max}J, <{uc2_mem_max}MB -> (out of {len(results_uc2)}) {results_uc2[0]}')
         uc2_sol.append(results_uc2[0]['conf'])
         enr_other = [x["enr"] for x in results_uc2]
         mem_other = [x["mem"] for x in results_uc2]
-        print(f'       extremes of results: enr: {np.min(enr_other)}-{np.max(enr_other)}, mem: {np.min(mem_other)}-{np.max(mem_other)}')
+        # print(f'       extremes of results: enr: {np.min(enr_other)}-{np.max(enr_other)}, mem: {np.min(mem_other)}-{np.max(mem_other)}')
     else:
         print(f'   <{uc2_enr_max}J, <{uc2_mem_max}MB -> No Results')
 
+input()
 print('Use Case #3')
 uc3_sol = list()
 for uc3_acc_min, uc3_mem_max in zip(uc3[0], uc3[1]): # above this acc, below this memory
     results_uc3 = [x for x in results if x['acc'] >= uc3_acc_min and x['mem'] <= uc3_mem_max]
     results_uc3.sort(key=lambda x: x['lat']) # lowest latency
     if len(results_uc3) > 0:
-        print(f'   >{uc3_acc_min}%, <{uc3_mem_max}MB -> {results_uc3[0]}')
+        print(f'   >{uc3_acc_min}%, <{uc3_mem_max}MB -> (out of {len(results_uc3)}) {results_uc3[0]}')
         uc3_sol.append(results_uc3[0]['conf'])
         acc_other = [x["acc"] for x in results_uc3]
         mem_other = [x["mem"] for x in results_uc3]
-        print(f'       extremes of results: acc: {np.min(acc_other)}-{np.max(acc_other)}, mem: {np.min(mem_other)}-{np.max(mem_other)}')
+        # print(f'       extremes of results: acc: {np.min(acc_other)}-{np.max(acc_other)}, mem: {np.min(mem_other)}-{np.max(mem_other)}')
     else:
         print(f'   >{uc3_acc_min}%, <{uc3_mem_max}MB -> No Results')
-
-
-input()
-print('\n\n')
-
-for uc, sol in zip([uc1, uc2, uc3], [uc1_sol, uc2_sol, uc3_sol]):
-    print('\\hline')
-    for j in range(len(sol)):
-        conf = sol[j].split(',')
-        uc_p1 = uc[0][j]
-        uc_p2 = uc[1][j]
-        # print(f'{uc_p1} & {uc_p2} & {ctext} \\\\')
-        print(f'\\multirow{{2}}{{*}}{{ {uc_p1} }} & \\multirow{{2}}{{*}}{{ {uc_p2} }}')
-        print(f'& {conf[0]}, {conf[1]}, \\\\')
-        print(f'& & {conf[2]}, {conf[3]} \\\\')
-        print('\\hline')
-    print()
